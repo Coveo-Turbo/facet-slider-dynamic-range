@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <script src="https://static.cloud.coveo.com/searchui/v2.9659/js/CoveoJsSearch.js"></script>
+  <script src="https://static.cloud.coveo.com/searchui/v2.9659/js/cultures/en.js"></script>
+  <script src="https://static.cloud.coveo.com/searchui/v2.9659/js/templates/templatesNew.js"></script>
+
+  <script src="config.js"></script>
+  <script src="component.js"></script>
+  <!-- <script src="components/<name>.js"></script> -->
+
+  <script src="init.js"></script>
+
+  <link rel="stylesheet" href="https://static.cloud.coveo.com/searchui/v2.9659/css/CoveoFullSearchNewDesign.css" />
+  <link rel="stylesheet" href="component.css" />
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // Coveo.SearchEndpoint.endpoints['default'].options.queryStringArguments.viewAllContent = 'true';
+
+      const numberBeds = [{
+          start: 2,
+          end: 5,
+          endInclusive: true,
+          label: "2+"
+        },
+        {
+          start: 3,
+          end: 5,
+          endInclusive: true,
+          label: "3+"
+        },
+        {
+          start: 4,
+          end: 5,
+          endInclusive: true,
+          label: "4+"
+        },
+        {
+          start: 5,
+          end: 5,
+          endInclusive: true,
+          label: "5+"
+        }
+      ];
+      const numberBaths = [{
+          start: 1,
+          end: 1,
+          endInclusive: true,
+          label: "1+"
+        },
+        {
+          start: 2,
+          end: 2,
+          endInclusive: true,
+          label: "2+"
+        },
+        {
+          start: 3,
+          end: 3,
+          endInclusive: true,
+          label: "3+"
+        },
+        {
+          start: 4,
+          end: 4,
+          endInclusive: true,
+          label: "4+"
+        },
+        {
+          start: 5,
+          end: 15,
+          endInclusive: true,
+          label: "5+"
+        }
+      ];
+      Coveo.SearchEndpoint.endpoints['default'].options.queryStringArguments.viewAllContent = 'true'
+      Coveo.init(document.getElementById('search'), {
+        Analytics: {
+          searchHub: demoConfig.searchHub,
+        },
+        beds: {
+          ranges: numberBeds
+        },
+        baths: {
+          ranges: numberBaths
+        },
+        viewAllContent: true
+      });
+
+      const standaloneSearchBoxRoot = document.querySelector('.CoveoSearchInterface');
+
+      Coveo.initSearchbox(standaloneSearchBoxRoot, demoConfig.searchUrl, {
+        Analytics: {
+          searchHub: demoConfig.searchHub,
+        },
+      });
+    })
+  </script>
+</head>
+
+<body>
+  <div id="search" class="CoveoSearchInterface" data-enable-history="true">
+    <!-- <div class="CoveoFolding"></div> -->
+    <div class="CoveoAnalytics"></div>
+    <div class="coveo-tab-section">
+      <!-- <a class="CoveoTab" data-id="All" data-caption="All Content"></a> -->
+    </div>
+    <div class="coveo-search-section">
+      <div class="CoveoSearchbox" data-enable-omnibox="true"></div>
+    </div>
+    <div class="coveo-main-section">
+      <div class="coveo-facet-column">
+
+        <div class="CoveoFacetRange" data-title="Bedrooms" data-field="@sfbeds__c" id="beds"></div>
+        <div class="CoveoFacetRange" data-title="Bathrooms" data-field="@sfbaths__c" id="baths"></div>
+
+        <div data-id="FacetSliderDynamicRange" id="FacetSliderDynamicRange" class="CoveoFacetSliderDynamicRange" 
+            data-title="Price Range Dynamic" 
+            data-field="@sfprice__c"
+            data-range-slider="true"
+            ></div>
+      </div>
+      <div class="coveo-results-column">
+        <div class="CoveoShareQuery"></div>
+        <div class="CoveoPreferencesPanel">
+          <div class="CoveoResultsPreferences"></div>
+          <div class="CoveoResultsFiltersPreferences"></div>
+        </div>
+        <div class="CoveoTriggers"></div>
+        <div class="CoveoBreadcrumb"></div>
+        <div class="CoveoDidYouMean"></div>
+        <div class="coveo-results-header">
+          <div class="coveo-summary-section">
+            <span class="CoveoQuerySummary"></span>
+            <span class="CoveoQueryDuration"></span>
+          </div>
+          <div class="coveo-result-layout-section">
+            <span class="CoveoResultLayout"></span>
+          </div>
+          <div class="coveo-sort-section">
+            <span class="CoveoSort" data-sort-criteria="relevancy" data-caption="Relevance"></span>
+            <span class="CoveoSort" data-sort-criteria="date descending,date ascending" data-caption="Date"></span>
+          </div>
+        </div>
+        <div class="CoveoHiddenQuery"></div>
+        <div class="CoveoErrorReport" data-pop-up="false"></div>
+        <div class="CoveoResultList" data-layout="card" data-wait-animation="fade" data-auto-select-fields-to-include="false">
+          <script id="customCards" class="result-template" type="text/html">
+            <div class="rounded overflow-hidden shadow-lg w-full">
+              <div class="w-full">
+                <span class="CoveoFieldValue w-full" data-field="@sfthumbnail__c" data-helper="image" data-html-value="true">
+              </div>
+              <div class="px-6 py-4">
+                <div class="font-bold text-xl mb-2"> <a class="CoveoResultLink cardlink w-full h-full"></a></div>
+              </div>
+              <div class="px-6 py-4">
+                <span class="CoveoFieldValue inline-block bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 mr-2" data-helper="currency" data-field="@sfprice__c"></span>
+                <div class="inline-block bg-gray-200 rounded-full px-3 py-1">
+                  <span class="CoveoFieldValue  text-sm font-semibold text-gray-700 mr-2" data-field="@sfaddress__c"></span>,
+                  <span class="CoveoFieldValue text-sm font-semibold text-gray-700" data-field="@sfcity__c"></span>
+                  <span class="CoveoFieldValue text-sm font-semibold text-gray-700" data-field="@minmaxprice"></span>
+                </div>
+              </div>
+            </div>
+          </script>
+        </div>
+      </div>
+      <div class="CoveoPager"></div>
+      <div class="CoveoLogo"></div>
+      <div class="CoveoResultsPerPage"></div>
+    </div>
+  </div>
+  </div>
+</body>
+
+</html>
