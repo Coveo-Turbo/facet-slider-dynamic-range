@@ -1,6 +1,7 @@
 {
   "name": "@coveops/facet-slider-dynamic-range",
-  "version": "1.0.0",
+  "private":false,
+  "version": "1.0.2",
   "description": "facet-slider-dynamic-range",
   "main": "dist/index.js",
   "scripts": {
@@ -11,10 +12,7 @@
     "precompile": "npm run build"
   },
   "keywords": [],
-  "author": "jfleurent@coveo.com",
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com/"
-  },
+  "author": "",
   "license": "Apache-2.0",
   "types": "dist/index.d.ts",
   "files": [

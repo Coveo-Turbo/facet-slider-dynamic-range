@@ -17,10 +17,7 @@ watch:
 	npm run watch
 
 serve:
-	./node_modules/.bin/coveops serve \
-		--org-id $(COVEO_ORG_ID) \
-		--token $(COVEO_TOKEN) \
-		--port $(SERVER_PORT)
+	.\node_modules\.bin\coveops serve
 
 pack: 
 	npm pack
