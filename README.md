@@ -33,7 +33,7 @@ export * from '@coveops/facet-slider-dynamic-range'
 4. Or for quick testing, you can add the script from unpkg
 
 ```html
-<script src="https://unpkg.com/@coveops/facet-slider-dynamic-range@1.0.2/dist/index.min.js"></script>
+<script src="https://unpkg.com/@coveops/facet-slider-dynamic-range@latest/dist/index.min.js"></script>
 ```
 
 > Disclaimer: Unpkg should be used for testing but not for production.
