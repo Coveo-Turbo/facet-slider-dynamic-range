@@ -30,7 +30,16 @@ const FacetSliderDynamicRange = require('@coveops/facet-slider-dynamic-range').F
 export * from '@coveops/facet-slider-dynamic-range'
 ```
 
-4. Include the component in your template as follows:
+4. Or for quick testing, you can add the script from unpkg
+
+```html
+<script src="https://unpkg.com/@coveops/facet-slider-dynamic-range@1.0.2/dist/index.min.js"></script>
+```
+
+> Disclaimer: Unpkg should be used for testing but not for production.
+
+
+5. Include the component in your template as follows:
 
 Place the component in your markup:
 
