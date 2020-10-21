@@ -95,13 +95,13 @@
         viewAllContent: true
       });
 
-      const standaloneSearchBoxRoot = document.querySelector('.CoveoSearchInterface');
+      // const standaloneSearchBoxRoot = document.querySelector('.CoveoSearchInterface');
 
-      Coveo.initSearchbox(standaloneSearchBoxRoot, demoConfig.searchUrl, {
-        Analytics: {
-          searchHub: demoConfig.searchHub,
-        },
-      });
+      // Coveo.initSearchbox(standaloneSearchBoxRoot, demoConfig.searchUrl, {
+      //   Analytics: {
+      //     searchHub: demoConfig.searchHub,
+      //   },
+      // });
     })
   </script>
 </head>
@@ -114,12 +114,17 @@
     </div>
     <div class="coveo-main-section">
       <div class="coveo-facet-column">
+        <div class="CoveoFacet" data-title="source" data-field="@source" data-id="source"></div>
+        <div class="CoveoFacetRange" data-title="Bedrooms" data-field="@sfbeds__c" id="beds"></div>
+        <div class="CoveoFacetRange" data-title="Bathrooms" data-field="@sfbaths__c" id="baths"></div>
         <div data-id="FacetSliderDynamicRange" id="FacetSliderDynamicRange" class="CoveoFacetSliderDynamicRange" 
             data-title="Price Range Dynamic" 
-            data-field="@rowid"
+            data-field="@sfprice__c"
             data-range-slider="true"
+            data-delay=500
+            data-rouded=3
             ></div>
-        <div class="CoveoFacet" data-title="source" data-field="@source" id="source"></div>
+        
 
       </div>
       <div class="coveo-results-column">

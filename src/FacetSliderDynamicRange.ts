@@ -1,6 +1,7 @@
 import {
     Component,
     IComponentBindings,
+    Initialization,
     ComponentOptions,
     FacetSlider,
     QueryEvents,
@@ -8,30 +9,38 @@ import {
     IPreprocessResultsEventArgs,
     INewQueryEventArgs,
     IChangeAnalyticsCustomDataEventArgs,
-    $$
+    $$,
 } from 'coveo-search-ui';
-import { lazyComponent } from '@coveops/turbo-core';
 
 export interface IFacetSliderDynamicRangeOptions {
     field: string;
     title?: string;
     id?: string;
     rangeSlider?: boolean;
+    delay?: number;
+    valueCaption?: any;
+    rounded?: number;
 }
 
-@lazyComponent
 export class FacetSliderDynamicRange extends Component {
     static ID = 'FacetSliderDynamicRange';
 
     public FacetSliderDynamicRange: FacetSlider;
     private cleanedField: string;
     public isActive: boolean;
+    public isInit: boolean;
+    private initialValues: [number, number];
 
     static options: IFacetSliderDynamicRangeOptions = {
         field: ComponentOptions.buildStringOption(),
         title: ComponentOptions.buildStringOption({ defaultValue: "FacetSliderDynamicRange" }),
         id: ComponentOptions.buildStringOption({ defaultValue: "FacetSliderDynamicRange" }),
         rangeSlider: ComponentOptions.buildBooleanOption({ defaultValue: true }),
+        delay: ComponentOptions.buildNumberOption({ defaultValue: 200 }),
+        rounded: ComponentOptions.buildNumberOption({ defaultValue: 0 }),
+        valueCaption: ComponentOptions.buildCustomOption<(values: number[]) => string>(() => {
+            return null;
+        })
     };
 
     constructor(public element: HTMLElement, public options: IFacetSliderDynamicRangeOptions, public bindings: IComponentBindings) {
@@ -43,13 +52,27 @@ export class FacetSliderDynamicRange extends Component {
         this.bind.onRootElement(QueryEvents.newQuery, (args: INewQueryEventArgs) => this.handleNewQuery(args));
         this.bind.onRootElement(AnalyticsEvents.changeAnalyticsCustomData, (args: IChangeAnalyticsCustomDataEventArgs) => this.handleChangeAnalyticsCustomData(args));
         this.isActive = false;
-        this.build()
+
+        this.initialValues = Coveo.HashUtils.getValue('f:' + this.options.id + ':range', window.location.hash);
+
+        Coveo.load('FacetSlider').then(
+            (arg) => {
+                Coveo.FacetSlider = arg as any;
+                if (this.initialValues) {
+                    this.isActive = true;
+                    this.generateFacetDom(this.initialValues[0] - 1, this.initialValues[1]);
+
+                } else {
+                    this.generateFacetDomWithoutMinMax();
+                }
+            }
+        )
     }
 
-    private build() {
-
-        this.FacetSliderDynamicRange = new FacetSlider($$('div').el, this.options, this.bindings);
-        this.element.append(this.FacetSliderDynamicRange.element);
+    public reset() {
+        const facet = Coveo.get(<HTMLElement>this.element.firstChild, 'FacetSlider') as FacetSlider;
+        facet.reset();
+        this.isActive = false;
     }
 
     private clearGeneratedFacet() {
@@ -61,9 +84,7 @@ export class FacetSliderDynamicRange extends Component {
                 if (child) {
                     const facet = Coveo.get(child, 'FacetSlider') as FacetSlider;
                     if (facet) {
-                        // Disabling the Facet
                         facet.disable();
-                        // Removing the Facet element
                         this.element.removeChild(child);
                     }
                 }
@@ -72,8 +93,10 @@ export class FacetSliderDynamicRange extends Component {
     }
 
     private handleNewQuery(args: INewQueryEventArgs) {
-        if (!this.isActive) {
-            this.clearGeneratedFacet();
+        if (!this.isInit) {
+            if (!this.isActive) {
+                this.clearGeneratedFacet();
+            }
         }
     }
 
@@ -81,8 +104,7 @@ export class FacetSliderDynamicRange extends Component {
 
         if (args.actionCause == "facetRangeSlider" && args.metaObject['facetId'] == this.options.id) {
             this.isActive = true;
-            const facet = Coveo.get(<HTMLElement>this.element.firstChild, 'FacetSlider') as FacetSlider;
-            if (facet.initialStartOfSlider.toString() == args.metaObject.facetRangeStart && facet.initialEndOfSlider.toString() == args.metaObject.facetRangeEnd) {
+            if (this.FacetSliderDynamicRange.initialStartOfSlider.toString() == args.metaObject.facetRangeStart && this.FacetSliderDynamicRange.initialEndOfSlider.toString() == args.metaObject.facetRangeEnd) {
                 this.isActive = false;
             }
         }
@@ -97,29 +119,63 @@ export class FacetSliderDynamicRange extends Component {
 
     }
 
+    protected generateFacetDomWithoutMinMax() {
+        const elem = $$('div');
+        let options = {
+            id: this.options.id,
+            title: this.options.title,
+            field: this.options.field,
+            rangeSlider: true,
+            rounded: this.options.rounded,
+            valueCaption: this.options.valueCaption
+        }
+        this.FacetSliderDynamicRange = new Coveo.FacetSlider(elem.el, options, this.bindings);
+        this.element.append(this.FacetSliderDynamicRange.element);
+        setTimeout(() => {
+            this.FacetSliderDynamicRange.enable()
+            this.FacetSliderDynamicRange.element.classList.remove('coveo-disabled-empty');
+            this.FacetSliderDynamicRange.element.classList.remove('coveo-disabled');
+        }, this.options.delay);
+    }
+
+    protected generateFacetDom(min: number, max: number) {
+        const elem = $$('div');
+        let options = {
+            id: this.options.id,
+            title: this.options.title,
+            field: this.options.field,
+            rangeSlider: true,
+            start: min,
+            end: max,
+            rounded: this.options.rounded,
+            valueCaption: this.options.valueCaption
+        }
+        this.FacetSliderDynamicRange = new Coveo.FacetSlider(elem.el, options, this.bindings);
+        this.element.append(this.FacetSliderDynamicRange.element);
+        setTimeout(() => {
+            this.FacetSliderDynamicRange.enable()
+            this.FacetSliderDynamicRange.element.classList.remove('coveo-disabled-empty');
+            this.FacetSliderDynamicRange.element.classList.remove('coveo-disabled');
+        }, this.options.delay);
+    }
+
     private handlePreprocessResults(args: IPreprocessResultsEventArgs) {
 
-        let currentMin = _.min(args.results.results, (item) => { return item.raw[this.cleanedField]; }).raw[this.cleanedField];
-        let currentMax = _.max(args.results.results, (item) => { return item.raw[this.cleanedField]; }).raw[this.cleanedField];
+        // let currentMin = _.min(args.results.results, (item) => { return item.raw[this.cleanedField]; }).raw[this.cleanedField];
+        // let currentMax = _.max(args.results.results, (item) => { return item.raw[this.cleanedField]; }).raw[this.cleanedField];
+        let itemMin = _.min(args.results.results, (item) => { return item.raw[this.cleanedField]; });
+        let itemMax = _.max(args.results.results, (item) => { return item.raw[this.cleanedField]; });
+
+        let currentMin = itemMin.raw[this.cleanedField];
+        let currentMax = itemMax.raw[this.cleanedField];
+
+        // currentMin = itemMin == Infinity ? 0 : itemMin.raw[this.cleanedField];
+        // currentMax = itemMax == -Infinity ? 0 : itemMax.raw[this.cleanedField];
 
         if (!this.isActive && !(currentMax == currentMin)) {
-            const elem = $$('div');
-            let options = {
-                id: this.options.id,
-                title: this.options.title,
-                field: this.options.field,
-                rangeSlider: true,
-                start: currentMin,
-                end: currentMax
-            }
-            this.FacetSliderDynamicRange = new FacetSlider(elem.el, options, this.bindings);
-            this.element.append(this.FacetSliderDynamicRange.element);
-            setTimeout(() => {
-                const facet = Coveo.get(<HTMLElement>this.element.firstChild, 'FacetSlider') as FacetSlider;
-                facet.enable();
-                facet.element.classList.remove('coveo-disabled-empty');
-                facet.element.classList.remove('coveo-disabled');
-            }, 200);
+            this.clearGeneratedFacet();
+            this.generateFacetDom(currentMin, currentMax);
         }
     }
 }
+Initialization.registerAutoCreateComponent(FacetSliderDynamicRange);
