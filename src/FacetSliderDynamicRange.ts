@@ -9,6 +9,7 @@ import {
     IPreprocessResultsEventArgs,
     INewQueryEventArgs,
     IChangeAnalyticsCustomDataEventArgs,
+    IDuringQueryEventArgs,
     $$,
 } from 'coveo-search-ui';
 
@@ -28,6 +29,7 @@ export class FacetSliderDynamicRange extends Component {
     public FacetSliderDynamicRange: FacetSlider;
     private cleanedField: string;
     public isActive: boolean;
+    public isFetchingMore: boolean;
     public isInit: boolean;
     private initialValues: [number, number];
 
@@ -48,10 +50,13 @@ export class FacetSliderDynamicRange extends Component {
         this.options = ComponentOptions.initComponentOptions(element, FacetSliderDynamicRange, options);
         this.cleanedField = this.options.field.replace('@', '');
 
+        this.bind.onRootElement('state:change:q', () => this.handleStateChangeQ());
+        this.bind.onRootElement(QueryEvents.duringFetchMoreQuery, (args: IDuringQueryEventArgs) => this.handleDuringFetchMoreQuery(args));
         this.bind.onRootElement(QueryEvents.preprocessResults, (args: IPreprocessResultsEventArgs) => this.handlePreprocessResults(args));
         this.bind.onRootElement(QueryEvents.newQuery, (args: INewQueryEventArgs) => this.handleNewQuery(args));
         this.bind.onRootElement(AnalyticsEvents.changeAnalyticsCustomData, (args: IChangeAnalyticsCustomDataEventArgs) => this.handleChangeAnalyticsCustomData(args));
         this.isActive = false;
+        this.isFetchingMore = false;
 
         this.initialValues = Coveo.HashUtils.getValue('f:' + this.options.id + ':range', window.location.hash);
 
@@ -90,6 +95,14 @@ export class FacetSliderDynamicRange extends Component {
                 }
             }
         }
+    }
+
+    private handleStateChangeQ() {
+        this.isActive = false;
+    }
+
+    private handleDuringFetchMoreQuery(args: IDuringQueryEventArgs) {
+        this.isFetchingMore = true;
     }
 
     private handleNewQuery(args: INewQueryEventArgs) {
@@ -172,10 +185,11 @@ export class FacetSliderDynamicRange extends Component {
         // currentMin = itemMin == Infinity ? 0 : itemMin.raw[this.cleanedField];
         // currentMax = itemMax == -Infinity ? 0 : itemMax.raw[this.cleanedField];
 
-        if (!this.isActive && !(currentMax == currentMin)) {
+        if (!this.isActive && !(currentMax == currentMin) && !this.isFetchingMore) {
             this.clearGeneratedFacet();
             this.generateFacetDom(currentMin, currentMax);
         }
+        this.isFetchingMore = false;
     }
 }
 Initialization.registerAutoCreateComponent(FacetSliderDynamicRange);
