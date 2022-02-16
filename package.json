@@ -1,6 +1,6 @@
 {
   "name": "@coveops/facet-slider-dynamic-range",
-  "private":false,
+  "private": false,
   "version": "1.4.0",
   "description": "facet-slider-dynamic-range",
   "main": "dist/index.js",
