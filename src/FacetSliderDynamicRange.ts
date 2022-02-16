@@ -126,7 +126,6 @@ export class FacetSliderDynamicRange extends Component {
         });
         return computedGroupBy?.globalComputedFieldResults || [];
     }
-
     private handleStateChangeQ() {
         this.isActive = false;
     }
@@ -139,7 +138,7 @@ export class FacetSliderDynamicRange extends Component {
         const minMaxGroupBy = this.buildComputedGroupByRequest();
         args.queryBuilder.groupByRequests.push(minMaxGroupBy);
     }
-
+  
     private handleNewQuery(args: INewQueryEventArgs) {
         if (!this.isInit) {
             if (!this.isActive) {
