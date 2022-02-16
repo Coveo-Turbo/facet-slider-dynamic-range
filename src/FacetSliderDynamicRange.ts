@@ -10,7 +10,11 @@ import {
     INewQueryEventArgs,
     IChangeAnalyticsCustomDataEventArgs,
     IDuringQueryEventArgs,
+    IGroupByRequest,
     $$,
+    IDoneBuildingQueryEventArgs,
+    IQueryResults,
+    IGroupByResult,
 } from 'coveo-search-ui';
 
 export interface IFacetSliderDynamicRangeOptions {
@@ -52,6 +56,7 @@ export class FacetSliderDynamicRange extends Component {
 
         this.bind.onRootElement('state:change:q', () => this.handleStateChangeQ());
         this.bind.onRootElement(QueryEvents.duringFetchMoreQuery, (args: IDuringQueryEventArgs) => this.handleDuringFetchMoreQuery(args));
+        this.bind.onRootElement(QueryEvents.doneBuildingQuery, (args: IDoneBuildingQueryEventArgs) => this.handleDoneBuildingQuery(args));
         this.bind.onRootElement(QueryEvents.preprocessResults, (args: IPreprocessResultsEventArgs) => this.handlePreprocessResults(args));
         this.bind.onRootElement(QueryEvents.newQuery, (args: INewQueryEventArgs) => this.handleNewQuery(args));
         this.bind.onRootElement(AnalyticsEvents.changeAnalyticsCustomData, (args: IChangeAnalyticsCustomDataEventArgs) => this.handleChangeAnalyticsCustomData(args));
@@ -97,6 +102,30 @@ export class FacetSliderDynamicRange extends Component {
         }
     }
 
+    private buildComputedGroupByRequest(): IGroupByRequest {
+        return {
+            field: this.options.field,
+            injectionDepth: 10000,
+            computedFields: [
+                {
+                    field: this.options.field,
+                    operation: 'minimum'
+                },
+                {
+                    field: this.options.field,
+                    operation: 'maximum'
+                }
+            ],
+            maximumNumberOfValues: 1
+        };
+    }
+
+    private getComputedValues(results: IQueryResults){
+        const computedGroupBy: IGroupByResult = _.find(results.groupByResults, (gbResult) => {
+            return gbResult?.globalComputedFieldResults.length;
+        });
+        return computedGroupBy?.globalComputedFieldResults || [];
+    }
     private handleStateChangeQ() {
         this.isActive = false;
     }
@@ -105,6 +134,11 @@ export class FacetSliderDynamicRange extends Component {
         this.isFetchingMore = true;
     }
 
+    private handleDoneBuildingQuery(args: IDoneBuildingQueryEventArgs) {
+        const minMaxGroupBy = this.buildComputedGroupByRequest();
+        args.queryBuilder.groupByRequests.push(minMaxGroupBy);
+    }
+  
     private handleNewQuery(args: INewQueryEventArgs) {
         if (!this.isInit) {
             if (!this.isActive) {
@@ -173,17 +207,13 @@ export class FacetSliderDynamicRange extends Component {
     }
 
     private handlePreprocessResults(args: IPreprocessResultsEventArgs) {
+        
+        const minMaxValues = this.getComputedValues(args.results);
+        const itemMin = _.min(args.results.results, (item) => { return item.raw[this.cleanedField]; });
+        const itemMax = _.max(args.results.results, (item) => { return item.raw[this.cleanedField]; });
 
-        // let currentMin = _.min(args.results.results, (item) => { return item.raw[this.cleanedField]; }).raw[this.cleanedField];
-        // let currentMax = _.max(args.results.results, (item) => { return item.raw[this.cleanedField]; }).raw[this.cleanedField];
-        let itemMin = _.min(args.results.results, (item) => { return item.raw[this.cleanedField]; });
-        let itemMax = _.max(args.results.results, (item) => { return item.raw[this.cleanedField]; });
-
-        let currentMin = itemMin.raw[this.cleanedField];
-        let currentMax = itemMax.raw[this.cleanedField];
-
-        // currentMin = itemMin == Infinity ? 0 : itemMin.raw[this.cleanedField];
-        // currentMax = itemMax == -Infinity ? 0 : itemMax.raw[this.cleanedField];
+        const currentMin = minMaxValues[0] || itemMin.raw[this.cleanedField];
+        const currentMax = minMaxValues[1] || itemMax.raw[this.cleanedField];
 
         if (!this.isActive && !(currentMax == currentMin) && !this.isFetchingMore) {
             this.clearGeneratedFacet();
