@@ -11,6 +11,7 @@ import {
     IChangeAnalyticsCustomDataEventArgs,
     IDuringQueryEventArgs,
     IGroupByRequest,
+    IComponentOptionsObjectOptionArgs,
     $$,
     IDoneBuildingQueryEventArgs,
     IQueryResults,
@@ -23,8 +24,17 @@ export interface IFacetSliderDynamicRangeOptions {
     id?: string;
     rangeSlider?: boolean;
     delay?: number;
-    valueCaption?: any;
     rounded?: number;
+    displayAsValue?: {
+      enable?: boolean;
+      unitSign?: string;
+      separator?: string;
+    };
+    displayAsPercent?: {
+      enable?: boolean;
+      separator?: string;
+    };
+    valueCaption?: (values: number[]) => string;
 }
 
 export class FacetSliderDynamicRange extends Component {
@@ -44,6 +54,22 @@ export class FacetSliderDynamicRange extends Component {
         rangeSlider: ComponentOptions.buildBooleanOption({ defaultValue: true }),
         delay: ComponentOptions.buildNumberOption({ defaultValue: 200 }),
         rounded: ComponentOptions.buildNumberOption({ defaultValue: 0 }),
+        displayAsValue: ComponentOptions.buildObjectOption(<IComponentOptionsObjectOptionArgs>{
+          subOptions: {
+            enable: ComponentOptions.buildBooleanOption({ defaultValue: true }),
+            unitSign: ComponentOptions.buildStringOption(),
+            separator: ComponentOptions.buildStringOption({ defaultValue: '-' })
+          },
+          section: 'Display'
+        }),
+        displayAsPercent: ComponentOptions.buildObjectOption(<IComponentOptionsObjectOptionArgs>{
+          subOptions: {
+            enable: ComponentOptions.buildBooleanOption({ defaultValue: false }),
+            separator: ComponentOptions.buildStringOption({ defaultValue: '-' })
+          },
+          section: 'Display'
+        }),
+      
         valueCaption: ComponentOptions.buildCustomOption<(values: number[]) => string>(() => {
             return null;
         })
@@ -80,25 +106,20 @@ export class FacetSliderDynamicRange extends Component {
     }
 
     public reset() {
-        const facet = Coveo.get(<HTMLElement>this.element.firstChild, 'FacetSlider') as FacetSlider;
-        facet.reset();
+        this.FacetSliderDynamicRange.reset();
         this.isActive = false;
     }
 
     private clearGeneratedFacet() {
-        if (this.element.children) {
-            let rescueCounter = 10; // In case it goes into an infinite loop. It is unlikely, but just in case...
-            while (this.element.firstChild && rescueCounter > 0) {
-                rescueCounter--;
-                const child = this.element.firstChild as HTMLElement;
-                if (child) {
-                    const facet = Coveo.get(child, 'FacetSlider') as FacetSlider;
-                    if (facet) {
-                        facet.disable();
-                        this.element.removeChild(child);
-                    }
-                }
+        if(this.FacetSliderDynamicRange){
+            this.FacetSliderDynamicRange.disable();
+            this.element.removeChild(this.FacetSliderDynamicRange.element);
+            const existingFacet = this.componentStateModel.attributes[Coveo.QueryStateModel.getFacetId(this.FacetSliderDynamicRange.options.id)];
+            if (existingFacet && existingFacet.length) {
+              // Even if we disable the Facet component and remove the HTML element form the DOM, it will continue to exist in the componentStateModel. So we need to manually remove it from the state.
+              this.componentStateModel.attributes[Coveo.QueryStateModel.getFacetId(this.FacetSliderDynamicRange.options.id)] = [];
             }
+            this.FacetSliderDynamicRange = null;          
         }
     }
 
@@ -122,10 +143,11 @@ export class FacetSliderDynamicRange extends Component {
 
     private getComputedValues(results: IQueryResults){
         const computedGroupBy: IGroupByResult = _.find(results.groupByResults, (gbResult) => {
-            return gbResult?.globalComputedFieldResults.length;
+            return gbResult?.globalComputedFieldResults.length && gbResult.field === this.cleanedField;
         });
         return computedGroupBy?.globalComputedFieldResults || [];
     }
+
     private handleStateChangeQ() {
         this.isActive = false;
     }
@@ -167,40 +189,26 @@ export class FacetSliderDynamicRange extends Component {
     }
 
     protected generateFacetDomWithoutMinMax() {
-        const elem = $$('div');
-        let options = {
-            id: this.options.id,
-            title: this.options.title,
-            field: this.options.field,
-            rangeSlider: true,
-            rounded: this.options.rounded,
-            valueCaption: this.options.valueCaption
-        }
-        this.FacetSliderDynamicRange = new Coveo.FacetSlider(elem.el, options, this.bindings);
-        this.element.append(this.FacetSliderDynamicRange.element);
-        setTimeout(() => {
-            this.FacetSliderDynamicRange.enable()
-            this.FacetSliderDynamicRange.element.classList.remove('coveo-disabled-empty');
-            this.FacetSliderDynamicRange.element.classList.remove('coveo-disabled');
-        }, this.options.delay);
+        const {delay, ...options} = this.options;
+        this.buildFacetSlider(options);
     }
 
     protected generateFacetDom(min: number, max: number) {
-        const elem = $$('div');
-        let options = {
-            id: this.options.id,
-            title: this.options.title,
-            field: this.options.field,
-            rangeSlider: true,
+        const {delay, ...defaultOptions} = this.options;
+        const options = {
+            ...defaultOptions,
             start: min,
-            end: max,
-            rounded: this.options.rounded,
-            valueCaption: this.options.valueCaption
+            end: max
         }
+        this.buildFacetSlider(options);
+    }
+
+    protected buildFacetSlider(options: Coveo.IFacetSliderOptions) {
+        const elem = $$('div');
         this.FacetSliderDynamicRange = new Coveo.FacetSlider(elem.el, options, this.bindings);
         this.element.append(this.FacetSliderDynamicRange.element);
         setTimeout(() => {
-            this.FacetSliderDynamicRange.enable()
+            this.FacetSliderDynamicRange.enable();
             this.FacetSliderDynamicRange.element.classList.remove('coveo-disabled-empty');
             this.FacetSliderDynamicRange.element.classList.remove('coveo-disabled');
         }, this.options.delay);
@@ -208,18 +216,20 @@ export class FacetSliderDynamicRange extends Component {
 
     private handlePreprocessResults(args: IPreprocessResultsEventArgs) {
         
-        const minMaxValues = this.getComputedValues(args.results);
-        const itemMin = _.min(args.results.results, (item) => { return item.raw[this.cleanedField]; });
-        const itemMax = _.max(args.results.results, (item) => { return item.raw[this.cleanedField]; });
+        if(args.results?.results.length){
+            const minMaxValues = this.getComputedValues(args.results);
+            const itemMin = _.min(args.results.results, (item) => { return item.raw[this.cleanedField]; });
+            const itemMax = _.max(args.results.results, (item) => { return item.raw[this.cleanedField]; });
 
-        const currentMin = minMaxValues[0] || (Infinity ? 0 : itemMin.raw[this.cleanedField]);
-        const currentMax = minMaxValues[1] || (-Infinity ? 0 : itemMax.raw[this.cleanedField]);
+            const currentMin = minMaxValues[0] || itemMin?.raw[this.cleanedField] || 0;
+            const currentMax = minMaxValues[1] || itemMax?.raw[this.cleanedField] || 0;
 
-        if (!this.isActive && !(currentMax == currentMin) && !this.isFetchingMore) {
-            this.clearGeneratedFacet();
-            this.generateFacetDom(currentMin, currentMax);
+            if (!this.isActive && !(currentMax == currentMin) && !this.isFetchingMore) {
+                this.clearGeneratedFacet();
+                this.generateFacetDom(currentMin, currentMax);
+            }
+            this.isFetchingMore = false;
         }
-        this.isFetchingMore = false;
     }
 }
 Initialization.registerAutoCreateComponent(FacetSliderDynamicRange);
