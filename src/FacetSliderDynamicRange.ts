@@ -208,9 +208,11 @@ export class FacetSliderDynamicRange extends Component {
         this.FacetSliderDynamicRange = new Coveo.FacetSlider(elem.el, options, this.bindings);
         this.element.append(this.FacetSliderDynamicRange.element);
         setTimeout(() => {
-            this.FacetSliderDynamicRange.enable();
-            this.FacetSliderDynamicRange.element.classList.remove('coveo-disabled-empty');
-            this.FacetSliderDynamicRange.element.classList.remove('coveo-disabled');
+            if(this.FacetSliderDynamicRange){
+                this.FacetSliderDynamicRange.enable();
+                this.FacetSliderDynamicRange.element.classList.remove('coveo-disabled-empty');
+                this.FacetSliderDynamicRange.element.classList.remove('coveo-disabled');
+            }
         }, this.options.delay);
     }
 
