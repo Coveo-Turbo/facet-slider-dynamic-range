@@ -212,8 +212,8 @@ export class FacetSliderDynamicRange extends Component {
         const itemMin = _.min(args.results.results, (item) => { return item.raw[this.cleanedField]; });
         const itemMax = _.max(args.results.results, (item) => { return item.raw[this.cleanedField]; });
 
-        const currentMin = minMaxValues[0] || itemMin.raw[this.cleanedField];
-        const currentMax = minMaxValues[1] || itemMax.raw[this.cleanedField];
+        const currentMin = minMaxValues[0] || (Infinity ? 0 : itemMin.raw[this.cleanedField]);
+        const currentMax = minMaxValues[1] || (-Infinity ? 0 : itemMax.raw[this.cleanedField]);
 
         if (!this.isActive && !(currentMax == currentMin) && !this.isFetchingMore) {
             this.clearGeneratedFacet();
