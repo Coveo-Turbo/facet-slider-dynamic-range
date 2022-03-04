@@ -25,6 +25,7 @@ export interface IFacetSliderDynamicRangeOptions {
     rangeSlider?: boolean;
     delay?: number;
     rounded?: number;
+    steps?: number;
     displayAsValue?: {
       enable?: boolean;
       unitSign?: string;
@@ -54,6 +55,7 @@ export class FacetSliderDynamicRange extends Component {
         rangeSlider: ComponentOptions.buildBooleanOption({ defaultValue: true }),
         delay: ComponentOptions.buildNumberOption({ defaultValue: 200 }),
         rounded: ComponentOptions.buildNumberOption({ defaultValue: 0 }),
+        steps: ComponentOptions.buildNumberOption({ defaultValue: 2 }),
         displayAsValue: ComponentOptions.buildObjectOption(<IComponentOptionsObjectOptionArgs>{
           subOptions: {
             enable: ComponentOptions.buildBooleanOption({ defaultValue: true }),
@@ -195,6 +197,8 @@ export class FacetSliderDynamicRange extends Component {
 
     protected generateFacetDom(min: number, max: number) {
         const {delay, ...defaultOptions} = this.options;
+        min = Math.round(min);
+        max = Math.round(max);
         const options = {
             ...defaultOptions,
             start: min,
@@ -206,9 +210,15 @@ export class FacetSliderDynamicRange extends Component {
     protected buildFacetSlider(options: Coveo.IFacetSliderOptions) {
         const elem = $$('div');
         this.FacetSliderDynamicRange = new Coveo.FacetSlider(elem.el, options, this.bindings);
+        
         this.element.append(this.FacetSliderDynamicRange.element);
         setTimeout(() => {
-            if(this.FacetSliderDynamicRange){
+            if(this.FacetSliderDynamicRange && this.FacetSliderDynamicRange['slider']){
+                const defautGetValues = this.FacetSliderDynamicRange['slider'].getValues;
+                this.FacetSliderDynamicRange['slider'].getValues = function () {
+                    const values = defautGetValues.call(this);
+                    return [Math.round(values[0]), Math.round(values[1])];
+                }
                 this.FacetSliderDynamicRange.enable();
                 this.FacetSliderDynamicRange.element.classList.remove('coveo-disabled-empty');
                 this.FacetSliderDynamicRange.element.classList.remove('coveo-disabled');
