@@ -47,6 +47,7 @@ export class FacetSliderDynamicRange extends Component {
     public isFetchingMore: boolean;
     public isInit: boolean;
     private initialValues: [number, number];
+    private rangeValues: [number, number];
 
     static options: IFacetSliderDynamicRangeOptions = {
         field: ComponentOptions.buildStringOption(),
@@ -79,6 +80,7 @@ export class FacetSliderDynamicRange extends Component {
 
     constructor(public element: HTMLElement, public options: IFacetSliderDynamicRangeOptions, public bindings: IComponentBindings) {
         super(element, FacetSliderDynamicRange.ID, bindings);
+        console.log('this', this);
         this.options = ComponentOptions.initComponentOptions(element, FacetSliderDynamicRange, options);
         this.cleanedField = this.options.field.replace('@', '');
 
@@ -91,18 +93,13 @@ export class FacetSliderDynamicRange extends Component {
         this.isActive = false;
         this.isFetchingMore = false;
 
-        this.initialValues = Coveo.HashUtils.getValue('f:' + this.options.id + ':range', window.location.hash);
+        this.initialValues = Coveo.HashUtils.getValue('f:' + this.options.id + ':range', window.location.hash); // here is where it happens
+        this.rangeValues = this.initialValues;
 
         Coveo.load('FacetSlider').then(
             (arg) => {
                 Coveo.FacetSlider = arg as any;
-                if (this.initialValues) {
-                    this.isActive = true;
-                    this.generateFacetDom(this.initialValues[0] - 1, this.initialValues[1]);
-
-                } else {
-                    this.generateFacetDomWithoutMinMax();
-                }
+                this.generateFacetDomWithoutMinMax();
             }
         )
     }
@@ -150,7 +147,12 @@ export class FacetSliderDynamicRange extends Component {
         return computedGroupBy?.globalComputedFieldResults || [];
     }
 
+    private handleRangeChanges() {
+        this.rangeValues = this.FacetSliderDynamicRange.getSelectedValues() as [number, number];
+    }
+
     private handleStateChangeQ() {
+        this.handleRangeChanges();
         this.isActive = false;
     }
 
@@ -239,6 +241,7 @@ export class FacetSliderDynamicRange extends Component {
             if (!this.isActive && !(currentMax == currentMin) && !this.isFetchingMore) {
                 this.clearGeneratedFacet();
                 this.generateFacetDom(currentMin, currentMax);
+                this.FacetSliderDynamicRange.setSelectedValues([this.rangeValues[0] - 1, this.rangeValues[1]]);
             }
             this.isFetchingMore = false;
         }
