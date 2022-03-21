@@ -151,6 +151,12 @@ export class FacetSliderDynamicRange extends Component {
         this.rangeValues = this.FacetSliderDynamicRange.getSelectedValues() as [number, number];
     }
 
+    private updateRangeInUrl() {
+        let rangeValues = this.FacetSliderDynamicRange.getSelectedValues() as [number, number];
+        let exp = (new RegExp('&f:' + this.options.id + ':range=\[[0-9]+,[0-9]+\]'));
+        window.history.replaceState(null, document.title, location.href.replace(exp, '') + `&f:${this.options.id}:range=[${rangeValues[0]},${rangeValues[1]}]`);
+    }
+
     private handleStateChangeQ() {
         this.handleRangeChanges();
         this.isActive = false;
@@ -212,6 +218,13 @@ export class FacetSliderDynamicRange extends Component {
     protected buildFacetSlider(options: Coveo.IFacetSliderOptions) {
         const elem = $$('div');
         this.FacetSliderDynamicRange = new Coveo.FacetSlider(elem.el, options, this.bindings);
+        elem.el.addEventListener('click', () => {
+            setTimeout(() => {
+                if(this.FacetSliderDynamicRange && this.FacetSliderDynamicRange['slider']){
+                    this.updateRangeInUrl();
+                }
+            }, 50);
+        });
         
         this.element.append(this.FacetSliderDynamicRange.element);
         setTimeout(() => {
@@ -224,6 +237,7 @@ export class FacetSliderDynamicRange extends Component {
                 this.FacetSliderDynamicRange.enable();
                 this.FacetSliderDynamicRange.element.classList.remove('coveo-disabled-empty');
                 this.FacetSliderDynamicRange.element.classList.remove('coveo-disabled');
+                this.updateRangeInUrl();
             }
         }, this.options.delay);
     }
@@ -241,7 +255,8 @@ export class FacetSliderDynamicRange extends Component {
             if (!this.isActive && !(currentMax == currentMin) && !this.isFetchingMore) {
                 this.clearGeneratedFacet();
                 this.generateFacetDom(currentMin, currentMax);
-                this.FacetSliderDynamicRange.setSelectedValues([this.rangeValues[0] - 1, this.rangeValues[1]]);
+                this.FacetSliderDynamicRange.setSelectedValues([this.rangeValues[0], this.rangeValues[1]]);
+                this.updateRangeInUrl();
             }
             this.isFetchingMore = false;
         }
