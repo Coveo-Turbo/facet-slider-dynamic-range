@@ -80,7 +80,6 @@ export class FacetSliderDynamicRange extends Component {
 
     constructor(public element: HTMLElement, public options: IFacetSliderDynamicRangeOptions, public bindings: IComponentBindings) {
         super(element, FacetSliderDynamicRange.ID, bindings);
-        console.log('this', this);
         this.options = ComponentOptions.initComponentOptions(element, FacetSliderDynamicRange, options);
         this.cleanedField = this.options.field.replace('@', '');
 
