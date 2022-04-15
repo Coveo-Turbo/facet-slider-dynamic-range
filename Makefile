@@ -17,7 +17,7 @@ watch:
 	npm run watch
 
 serve:
-	.\node_modules\.bin\coveops serve
+	npm run serve
 
 pack: 
 	npm pack
