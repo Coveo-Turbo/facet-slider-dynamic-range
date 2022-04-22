@@ -98,7 +98,7 @@ export class FacetSliderDynamicRange extends Component {
                 Coveo.FacetSlider = arg as any;
                 if (this.initialValues) {
                     this.isActive = true;
-                    this.generateFacetDom(this.initialValues[0] - 1, this.initialValues[1]);
+                    this.generateFacetDom(+(this.initialValues[0]-1), +this.initialValues[1]);
 
                 } else {
                     this.generateFacetDomWithoutMinMax();
@@ -121,7 +121,7 @@ export class FacetSliderDynamicRange extends Component {
               // Even if we disable the Facet component and remove the HTML element form the DOM, it will continue to exist in the componentStateModel. So we need to manually remove it from the state.
               this.componentStateModel.attributes[Coveo.QueryStateModel.getFacetId(this.FacetSliderDynamicRange.options.id)] = [];
             }
-            this.FacetSliderDynamicRange = null;          
+            this.FacetSliderDynamicRange = null;
         }
     }
 
@@ -197,8 +197,8 @@ export class FacetSliderDynamicRange extends Component {
 
     protected generateFacetDom(min: number, max: number) {
         const {delay, ...defaultOptions} = this.options;
-        min = Math.round(min);
-        max = Math.round(max);
+        min = +min.toFixed(defaultOptions.rounded);
+        max = +max.toFixed(defaultOptions.rounded);
         const options = {
             ...defaultOptions,
             start: min,
@@ -217,7 +217,7 @@ export class FacetSliderDynamicRange extends Component {
                 const defautGetValues = this.FacetSliderDynamicRange['slider'].getValues;
                 this.FacetSliderDynamicRange['slider'].getValues = function () {
                     const values = defautGetValues.call(this);
-                    return [Math.round(values[0]), Math.round(values[1])];
+                    return [+values[0].toFixed(options.rounded), +values[1].toFixed(options.rounded)];
                 }
                 this.FacetSliderDynamicRange.enable();
                 this.FacetSliderDynamicRange.element.classList.remove('coveo-disabled-empty');
@@ -233,8 +233,8 @@ export class FacetSliderDynamicRange extends Component {
             const itemMin = _.min(args.results.results, (item) => { return item.raw[this.cleanedField]; });
             const itemMax = _.max(args.results.results, (item) => { return item.raw[this.cleanedField]; });
 
-            const currentMin = minMaxValues[0] || itemMin?.raw[this.cleanedField] || 0;
-            const currentMax = minMaxValues[1] || itemMax?.raw[this.cleanedField] || 0;
+            const currentMin = minMaxValues[0] || typeof itemMin === 'object' ? itemMin?.raw[this.cleanedField] : 0 || 0;
+            const currentMax = minMaxValues[1] || typeof itemMax === 'object' ? itemMax?.raw[this.cleanedField] : 0 || 0;
 
             if (!this.isActive && !(currentMax == currentMin) && !this.isFetchingMore) {
                 this.clearGeneratedFacet();
